@@ -1,0 +1,136 @@
+#include <WiFi.h>
+#include <HTTPClient.h>;
+#include <ArduinoJson.h>;
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <WebServer.h>
+
+const char* ssid = "";
+const char* password = "";
+const int oneWireBus = 4;  // GPIO where the DS18B20 is connected to
+#define AOUT_PIN 36 // ESP32 pin GPIO36 (ADC0) that connects to AOUT pin of moisture sensor
+
+WebServer server(80);
+StaticJsonDocument<250> jsonDocument;
+char buffer[250];
+
+float soil_moisture_lvl;
+float temp;
+
+// Setup a oneWire instance to communicate with any OneWire devices
+OneWire oneWire(oneWireBus);
+
+// Pass our oneWire reference to Dallas Temperature sensor 
+DallasTemperature sensors(&oneWire);
+
+void setup_routing() {     
+  server.on("/temperature", getTemperature);        
+  server.on("/humidity", getHumidity);     
+  server.on("/data", getData);             
+  server.begin();    
+}
+ 
+void create_json(char *tag, float value, char *unit) {  
+  jsonDocument.clear();  
+  jsonDocument["type"] = tag;
+  jsonDocument["value"] = value;
+  jsonDocument["unit"] = unit;
+  serializeJson(jsonDocument, buffer);
+}
+ 
+void add_json_object(char *tag, float value, char *unit) {
+  JsonObject obj = jsonDocument.createNestedObject();
+  obj["type"] = tag;
+  obj["value"] = value;
+  obj["unit"] = unit; 
+}
+
+void read_sensor_data(void * parameter) {
+   for (;;) {
+    sensors.requestTemperatures(); 
+    temp = sensors.getTempCByIndex(0);
+    delay(5000);
+    soil_moisture_lvl = analogRead(AOUT_PIN); // read the analog value from soil moisture sensor
+    delay(500);
+    Serial.println("Read sensor data");
+ 
+    vTaskDelay(60000 / portTICK_PERIOD_MS);
+   }
+}
+ 
+void getTemperature() {
+  Serial.println("Get temperature");
+  create_json("Temperature", temp, "°C");
+  server.send(200, "application/json", buffer);
+}
+ 
+
+void getHumidity() {
+  Serial.println("Get soil moisture level");
+  create_json("Soil Moisture Value", soil_moisture_lvl, " ");
+  server.send(200, "application/json", buffer);
+} 
+
+ 
+void getData() {
+  Serial.println("Get Sensor Data");
+  jsonDocument.clear();
+
+  JsonArray jsonArray = jsonDocument.to<JsonArray>();
+
+  JsonObject tempObject = jsonArray.createNestedObject();
+  tempObject["type"] = "Temperature";
+  tempObject["value"] = temp;
+  tempObject["unit"] = "°C";
+
+  JsonObject moistureObject = jsonArray.createNestedObject();
+  moistureObject["type"] = "Soil Moisture Value";
+  moistureObject["value"] = soil_moisture_lvl;
+  moistureObject["unit"] = " ";
+
+  char buffer[250];
+  serializeJson(jsonArray, buffer);
+  server.send(200, "application/json", buffer);
+}
+
+
+void handlePost() {
+  if (server.hasArg("plain") == false) {
+  }
+  String body = server.arg("plain");
+  deserializeJson(jsonDocument, body);
+
+  server.send(200, "application/json", "{}");
+}
+
+void setup_task() {    
+  xTaskCreate(     
+  read_sensor_data,      
+  "Read sensor data",      
+  1000,      
+  NULL,      
+  1,     
+  NULL     
+  );     
+}
+
+void setup() {     
+  Serial.begin(115200); 
+
+  Serial.print("Connecting to Wi-Fi");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+ 
+  Serial.print("Connected! IP Address: ");
+  Serial.println(WiFi.localIP());
+  setup_task();    
+  setup_routing();     
+   
+}    
+       
+void loop() {    
+  server.handleClient();     
+}
