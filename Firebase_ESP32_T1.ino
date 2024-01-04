@@ -19,18 +19,18 @@
 #include "addons/RTDBHelper.h"
 
 // Insert your network credentials
-#define WIFI_SSID "Shirley"
-#define WIFI_PASSWORD "shirleyy"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
 
 // Insert Firebase project API Key
-#define API_KEY "AIzaSyCizFSzpmcS7fJ_BwoUf1XU0TeGTYJyUSw"
+#define API_KEY ""
 
 // Insert Authorized Email and Corresponding Password
-#define USER_EMAIL "lysure007@gmail.com"
-#define USER_PASSWORD "#Bethebest0613"
+#define USER_EMAIL ""
+#define USER_PASSWORD ""
 
 // Insert RTDB URLefine the RTDB URL
-#define DATABASE_URL "https://trackie-sample-default-rtdb.asia-southeast1.firebasedatabase.app/ "
+#define DATABASE_URL ""
 
 // Define Firebase objects
 FirebaseData fbdo;
