@@ -19,18 +19,18 @@
 #include "addons/RTDBHelper.h"
 
 // Insert your network credentials
-#define WIFI_SSID ""
-#define WIFI_PASSWORD ""
+#define WIFI_SSID "Shirley"
+#define WIFI_PASSWORD "shirleyy"
 
 // Insert Firebase project API Key
-#define API_KEY ""
+#define API_KEY "AIzaSyCizFSzpmcS7fJ_BwoUf1XU0TeGTYJyUSw"
 
 // Insert Authorized Email and Corresponding Password
-#define USER_EMAIL ""
-#define USER_PASSWORD ""
+#define USER_EMAIL "lysure007@gmail.com"
+#define USER_PASSWORD "#Bethebest0613"
 
 // Insert RTDB URLefine the RTDB URL
-#define DATABASE_URL ""
+#define DATABASE_URL "https://trackie-sample-default-rtdb.asia-southeast1.firebasedatabase.app/ "
 
 // Define Firebase objects
 FirebaseData fbdo;
@@ -163,13 +163,18 @@ void setup(){
   databasePath = "/UsersData/" + uid + "/readings";
 }
 
-// Function to format timestamp
-String formatTimestamp(time_t timestamp) {
+// Function to format timestamp to Singapore time
+String formatSingaporeTime(time_t timestamp) {
     char buffer[80];
-    struct tm * timeinfo;
 
-    timeinfo = localtime(&timestamp);
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+    // Singapore time (UTC+8 hours)
+    timestamp += 8 * 3600; // Adding 8 hours in seconds
+
+    struct tm timeinfo;
+    gmtime_r(&timestamp, &timeinfo);
+
+    sprintf(buffer, "%04d-%02d-%02d %02d:%02d:%02d", timeinfo.tm_year + 1900, timeinfo.tm_mon + 1,
+            timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 
     return String(buffer);
 }
@@ -181,16 +186,16 @@ void loop(){
     sendDataPrevMillis = millis();
 
     //Get current timestamp
-    timestamp = getTime();
-    Serial.print ("time: ");
-    Serial.println (formatTimestamp(timestamp));
-
-    parentPath= databasePath + "/" + String(formatTimestamp(timestamp));
+    time_t timestamp = getTime();
+    Serial.print("Singapore time: ");
+    Serial.println(formatSingaporeTime(timestamp));
+    
+    parentPath= databasePath + "/" + String(formatSingaporeTime(timestamp));
 
     json.set(tempPath.c_str(), String(temp));
     json.set(moistPath.c_str(), String(soil_moisture_lvl));
     //json.set(sunPath.c_str(), String(bme.readPressure()/100.0F));
-    json.set(timePath, String(formatTimestamp(timestamp)));
+    json.set(timePath, String(formatSingaporeTime(timestamp)));
     Serial.printf("Set json... %s\n", Firebase.RTDB.setJSON(&fbdo, parentPath.c_str(), &json) ? "ok" : fbdo.errorReason().c_str());
   }
 }
