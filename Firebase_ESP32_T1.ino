@@ -170,10 +170,12 @@ void loop(){
     Serial.println(formatSingaporeTime(timestamp));
     
     parentPath= databasePath + "/" + String(formatSingaporeTime(timestamp));
+    
+    // Create a string including temperature value and its unit
+    String temperatureString = String(temp) + " °C"; // Adding the Celsius unit
 
-    json.set(tempPath.c_str(), String(temp));
+    json.set(tempPath.c_str(), temperatureString);
     json.set(moistPath.c_str(), String(soil_moisture_lvl));
-    //json.set(sunPath.c_str(), String(bme.readPressure()/100.0F));
     json.set(timePath, String(formatSingaporeTime(timestamp)));
     Serial.printf("Set json... %s\n", Firebase.RTDB.setJSON(&fbdo, parentPath.c_str(), &json) ? "ok" : fbdo.errorReason().c_str());
   }
